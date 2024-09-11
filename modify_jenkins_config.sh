@@ -1,34 +1,32 @@
 #!/bin/bash
 
-# Ensure required environment variables are set
-if [ -z "$JENKINS_URL" ] || [ -z "$JOB_NAME" ] || [ -z "$ACTION" ]; then
-  echo "Error: Required environment variables (JENKINS_URL, JOB_NAME, ACTION) are not set."
-  exit 1
-fi
+# Define the job name and Jenkins home directory
+JOB_NAME="testinggg"
+JENKINS_HOME="/var/jenkins_home"
 
-# Validate ACTION
+# Define the path to the job's config.xml
+JOB_CONFIG="$JENKINS_HOME/jobs/$JOB_NAME/config.xml"
+
+# Define the action to be taken: enable or disable
+ACTION=$1
+
 if [ "$ACTION" != "enable" ] && [ "$ACTION" != "disable" ]; then
-  echo "Error: ACTION must be 'enable' or 'disable'."
-  exit 1
+    echo "Usage: $0 [enable|disable]"
+    exit 1
 fi
 
-# Get the current job configuration XML
-curl -s "$JENKINS_URL/job/$JOB_NAME/config.xml" -o config.xml
+# Backup the original config.xml
+cp "$JOB_CONFIG" "$JOB_CONFIG.bak"
 
-# Backup the original config file
-cp config.xml config_backup.xml
-
-# Update the config file based on the action
+# Use sed to enable or disable Editable Email Notification
 if [ "$ACTION" == "enable" ]; then
-    # Enable editable email notification (example pattern)
-    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>false<\/enabled>/<enabled>true<\/enabled>/g' config.xml
+    sed -i 's/<email-notifications>false<\/email-notifications>/<email-notifications>true<\/email-notifications>/' "$JOB_CONFIG"
 elif [ "$ACTION" == "disable" ]; then
-    # Disable editable email notification (example pattern)
-    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>true<\/enabled>/<enabled>false<\/enabled>/g' config.xml
+    sed -i 's/<email-notifications>true<\/email-notifications>/<email-notifications>false<\/email-notifications>/' "$JOB_CONFIG"
 fi
 
-# Update the job configuration
-curl -s -X POST -H "Content-Type: text/xml" --data-binary @config.xml "$JENKINS_URL/job/$JOB_NAME/config.xml"
+# Reload the Jenkins job configuration
+curl -X POST "http://localhost:8080/job/$JOB_NAME/config.xml" --data-binary @"$JOB_CONFIG" -H "Content-Type: application/xml"
 
 # Clean up
-rm config.xml
+rm "$JOB_CONFIG.bak"
