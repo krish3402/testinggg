@@ -3,30 +3,42 @@
 # Define the job name and Jenkins home directory
 JOB_NAME="testinggg"
 JENKINS_HOME="/var/jenkins_home"
-
-# Define the path to the job's config.xml
 JOB_CONFIG="$JENKINS_HOME/jobs/$JOB_NAME/config.xml"
 
-# Define the action to be taken: enable or disable
-ACTION=$1
-
-if [ "$ACTION" != "enable" ] && [ "$ACTION" != "disable" ]; then
-    echo "Usage: $0 [enable|disable]"
+# Check if the job config file exists
+if [ ! -f "$JOB_CONFIG" ]; then
+    echo "Job configuration file not found: $JOB_CONFIG"
     exit 1
 fi
 
 # Backup the original config.xml
 cp "$JOB_CONFIG" "$JOB_CONFIG.bak"
 
-# Use sed to enable or disable Editable Email Notification
+# Define action (enable or disable) and check for parameter
+ACTION=$1
+if [ "$ACTION" != "enable" ] && [ "$ACTION" != "disable" ]; then
+    echo "Usage: $0 [enable|disable]"
+    exit 1
+fi
+
+# Define the XML patterns for enabling/disabling email notifications
 if [ "$ACTION" == "enable" ]; then
+    # Modify the XML to enable Editable Email Notification
     sed -i 's/<email-notifications>false<\/email-notifications>/<email-notifications>true<\/email-notifications>/' "$JOB_CONFIG"
-elif [ "$ACTION" == "disable" ]; then
+else
+    # Modify the XML to disable Editable Email Notification
     sed -i 's/<email-notifications>true<\/email-notifications>/<email-notifications>false<\/email-notifications>/' "$JOB_CONFIG"
 fi
 
-# Reload the Jenkins job configuration
-curl -X POST "http://localhost:8080/job/$JOB_NAME/config.xml" --data-binary @"$JOB_CONFIG" -H "Content-Type: application/xml"
+# Check if sed command succeeded
+if [ $? -ne 0 ]; then
+    echo "Failed to update $JOB_CONFIG"
+    # Restore the backup if sed fails
+    mv "$JOB_CONFIG.bak" "$JOB_CONFIG"
+    exit 1
+fi
 
-# Clean up
+# Clean up backup file
 rm "$JOB_CONFIG.bak"
+
+echo "Editable Email Notification has been $ACTIONd for job $JOB_NAME."
