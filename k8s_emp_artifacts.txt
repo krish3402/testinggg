@@ -1,5 +1,5 @@
 
 tsdevopsteam/platform:em-artifacts-mt-44 (alpine 3.19.3)
 ========================================================
-Total: 0 (HIGH: 0, CRITICAL: 0)
+Total: 0 (HIGH: 1, CRITICAL: 1)
 
