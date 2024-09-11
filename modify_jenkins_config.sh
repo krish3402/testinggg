@@ -11,14 +11,14 @@ if [ ! -f "$JOB_CONFIG_XML" ]; then
   exit 1
 fi
 
-# Function to enable email notifications
+# Function to enable email notifications (disable the "Disable Extended Email Publisher" checkbox)
 enable_notifications() {
-  sed -i '/<hudson.plugins.emailext.EmailExtPublisher>/,/<\/hudson.plugins.emailext.EmailExtPublisher>/s/<enabled>false<\/enabled>/<enabled>true<\/enabled>/' "$JOB_CONFIG_XML"
+  sed -i '/<hudson.plugins.emailext.EmailExtPublisher>/,/<\/hudson.plugins.emailext.EmailExtPublisher>/s/<disabled>true<\/disabled>/<disabled>false<\/disabled>/' "$JOB_CONFIG_XML"
 }
 
-# Function to disable email notifications
+# Function to disable email notifications (enable the "Disable Extended Email Publisher" checkbox)
 disable_notifications() {
-  sed -i '/<hudson.plugins.emailext.EmailExtPublisher>/,/<\/hudson.plugins.emailext.EmailExtPublisher>/s/<enabled>true<\/enabled>/<enabled>false<\/enabled>/' "$JOB_CONFIG_XML"
+  sed -i '/<hudson.plugins.emailext.EmailExtPublisher>/,/<\/hudson.plugins.emailext.EmailExtPublisher>/s/<disabled>false<\/disabled>/<disabled>true<\/disabled>/' "$JOB_CONFIG_XML"
 }
 
 # Select action
@@ -35,4 +35,9 @@ case "$1" in
     ;;
 esac
 
+# Optionally restart Jenkins to apply changes
+# echo "Restarting Jenkins..."
+# sudo systemctl restart jenkins
+
 echo "Configuration updated successfully."
+
