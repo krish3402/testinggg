@@ -1,44 +1,34 @@
 #!/bin/bash
 
-# Path to the Jenkins job config file
-CONFIG_FILE="$JENKINS_HOME/jobs/$JOB_NAME/config.xml"  # Adjust this path accordingly
+# Ensure required environment variables are set
+if [ -z "$JENKINS_URL" ] || [ -z "$JOB_NAME" ] || [ -z "$ACTION" ]; then
+  echo "Error: Required environment variables (JENKINS_URL, JOB_NAME, ACTION) are not set."
+  exit 1
+fi
+
+# Validate ACTION
+if [ "$ACTION" != "enable" ] && [ "$ACTION" != "disable" ]; then
+  echo "Error: ACTION must be 'enable' or 'disable'."
+  exit 1
+fi
+
+# Get the current job configuration XML
+curl -s "$JENKINS_URL/job/$JOB_NAME/config.xml" -o config.xml
 
 # Backup the original config file
-cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
-
-# Determine whether to enable or disable email notifications
-ACTION=$1  # 'enable' or 'disable'
-
-# if [ "$ACTION" == "enable" ]; then
-#     # Enable email notifications
-#     sed -i 's/<recipientList><\/recipientList>/<recipientList>youremail@example.com<\/recipientList>/' "$CONFIG_FILE"
-#     echo "Enabled email notifications."
-# elif [ "$ACTION" == "disable" ]; then
-#     # Disable email notifications by clearing the recipient list
-#     sed -i 's/<recipientList>.*<\/recipientList>/<recipientList><\/recipientList>/' "$CONFIG_FILE"
-#     echo "Disabled email notifications."
-# else
-#     echo "Usage: $0 {enable|disable}"
-#     exit 1
-# fi
-
+cp config.xml config_backup.xml
 
 # Update the config file based on the action
 if [ "$ACTION" == "enable" ]; then
     # Enable editable email notification (example pattern)
-    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>false<\/enabled>/<enabled>true<\/enabled>/g' "$CONFIG_FILE"
+    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>false<\/enabled>/<enabled>true<\/enabled>/g' config.xml
 elif [ "$ACTION" == "disable" ]; then
     # Disable editable email notification (example pattern)
-    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>true<\/enabled>/<enabled>false<\/enabled>/g' "$CONFIG_FILE"
+    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher>/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/s/<enabled>true<\/enabled>/<enabled>false<\/enabled>/g' config.xml
 fi
 
+# Update the job configuration
+curl -s -X POST -H "Content-Type: text/xml" --data-binary @config.xml "$JENKINS_URL/job/$JOB_NAME/config.xml"
 
-# Verify if the modification was successful
-if diff "$CONFIG_FILE" "${CONFIG_FILE}.bak" >/dev/null; then
-    echo "No changes made to the config file."
-else
-    echo "Config file updated successfully."
-fi
-
-# Clean up backup file if needed
-rm "${CONFIG_FILE}.bak"
+# Clean up
+rm config.xml
