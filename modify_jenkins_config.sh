@@ -23,11 +23,43 @@ fi
 
 # Define the XML patterns for enabling/disabling email notifications
 if [ "$ACTION" == "enable" ]; then
-    # Modify the XML to enable Editable Email Notification
-    sed -i 's/<email-notifications>false<\/email-notifications>/<email-notifications>true<\/email-notifications>/' "$JOB_CONFIG"
+    # Add the email notification section if not present
+    sed -i '/<\/publishers>/i\
+    <hudson.plugins.emailext.ExtendedEmailPublisher plugin="email-ext@1814.v404722f34263">\
+      <recipientList>mohan.t@techsophy.com</recipientList>\
+      <configuredTriggers>\
+        <hudson.plugins.emailext.plugins.trigger.AlwaysTrigger>\
+          <email>\
+            <subject>$PROJECT_DEFAULT_SUBJECT</subject>\
+            <body>$PROJECT_DEFAULT_CONTENT</body>\
+            <recipientProviders>\
+              <hudson.plugins.emailext.plugins.recipients.DevelopersRecipientProvider/>\
+              <hudson.plugins.emailext.plugins.recipients.ListRecipientProvider/>\
+            </recipientProviders>\
+            <attachmentsPattern></attachmentsPattern>\
+            <attachBuildLog>false</attachBuildLog>\
+            <compressBuildLog>false</compressBuildLog>\
+            <replyTo>$PROJECT_DEFAULT_REPLYTO</replyTo>\
+            <contentType>project</contentType>\
+          </email>\
+        </hudson.plugins.emailext.plugins.trigger.AlwaysTrigger>\
+      </configuredTriggers>\
+      <contentType>default</contentType>\
+      <defaultSubject>$DEFAULT_SUBJECT</defaultSubject>\
+      <defaultContent>$DEFAULT_CONTENT</defaultContent>\
+      <attachmentsPattern></attachmentsPattern>\
+      <presendScript>$DEFAULT_PRESEND_SCRIPT</presendScript>\
+      <postsendScript>$DEFAULT_POSTSEND_SCRIPT</postsendScript>\
+      <attachBuildLog>false</attachBuildLog>\
+      <compressBuildLog>false</compressBuildLog>\
+      <replyTo>$DEFAULT_REPLYTO</replyTo>\
+      <from></from>\
+      <saveOutput>false</saveOutput>\
+      <disabled>false</disabled>\
+    </hudson.plugins.emailext.ExtendedEmailPublisher>' "$JOB_CONFIG"
 else
-    # Modify the XML to disable Editable Email Notification
-    sed -i 's/<email-notifications>true<\/email-notifications>/<email-notifications>false<\/email-notifications>/' "$JOB_CONFIG"
+    # Remove the email notification section if present
+    sed -i '/<hudson.plugins.emailext.ExtendedEmailPublisher/,/<\/hudson.plugins.emailext.ExtendedEmailPublisher>/d' "$JOB_CONFIG"
 fi
 
 # Check if sed command succeeded
@@ -40,5 +72,7 @@ fi
 
 # Clean up backup file
 rm "$JOB_CONFIG.bak"
+
+echo "Editable Email Notification has been $ACTIONd for job $JOB_NAME."
 
 echo "Editable Email Notification has been $ACTIONd for job $JOB_NAME."
