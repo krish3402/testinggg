@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Path to the Jenkins job config file
-CONFIG_FILE="$JENKINS_HOME/job/$JOB_NAME/config.xml"  # Adjust this path accordingly
+CONFIG_FILE="$JENKINS_HOME/jobs/$JOB_NAME/config.xml"  # Adjust this path accordingly
 
 # Backup the original config file
 cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
